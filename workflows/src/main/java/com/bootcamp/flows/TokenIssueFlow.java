@@ -11,6 +11,8 @@ import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 import net.corda.core.contracts.CommandData;
 
+import java.util.Arrays;
+
 import static java.util.Collections.singletonList;
 
 public class TokenIssueFlow {
@@ -46,13 +48,15 @@ public class TokenIssueFlow {
              *         TODO 1 - Create our TokenState to represent on-ledger tokens!
              * ===========================================================================*/
             // We create our new TokenState.
-            TokenState tokenState = null;
+            TokenState tokenState =  new TokenState(issuer, owner, amount);
 
             /* ============================================================================
              *      TODO 3 - Build our token issuance transaction to update the ledger!
              * ===========================================================================*/
             // We build our transaction.
-            TransactionBuilder transactionBuilder = null;
+            TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
+                    .addOutputState(tokenState)
+                    .addCommand(new TokenContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(), owner.getOwningKey()));
 
             /* ============================================================================
              *          TODO 2 - Write our TokenContract to control token issuance!
