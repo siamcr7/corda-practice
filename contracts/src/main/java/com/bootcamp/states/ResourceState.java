@@ -49,6 +49,18 @@ public class ResourceState implements ContractState {
         return issuer;
     }
 
+    @Override
+    public String toString() {
+        String output = "";
+
+        output += ("Resource ID: " + resourceId + "\n");
+        output += ("Energy Volume: " + energyVolume + "\n");
+        output += ("Energy Price: " + energyPrice + "\n");
+        output += ("\n" + "\n");
+
+        return output;
+    }
+
 //    public List<Party> getPeers() {
 ////        return Arrays.asList(peer1, peer2, peer3, peer4);
 //        return Arrays.asList(peer1, peer2);
