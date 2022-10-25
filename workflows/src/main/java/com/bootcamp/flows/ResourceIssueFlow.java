@@ -10,6 +10,7 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,17 +21,14 @@ public class ResourceIssueFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class ResourceIssueFlowInitiator extends FlowLogic<SignedTransaction> {
-        private final List<Party> peers;
         private final int resourceId;
         private final int energyVolume;
         private final int energyPrice;
 
-        public ResourceIssueFlowInitiator(Party p1, Party p2, int rId, int ev, int ep) {
+        public ResourceIssueFlowInitiator(int rId, int ev, int ep) {
             this.resourceId = rId;
             this.energyVolume = ev;
             this.energyPrice = ep;
-
-            peers = Arrays.asList(p1, p2);
         }
 
         private final ProgressTracker progressTracker = new ProgressTracker();
@@ -48,6 +46,18 @@ public class ResourceIssueFlow {
             final Party notary = getServiceHub().getNetworkMapCache().getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
             // We get a reference to our own identity.
             Party issuer = getOurIdentity();
+
+            ArrayList<Party> peers = new ArrayList<>();
+            List<net.corda.core.node.NodeInfo> parties = getServiceHub().getNetworkMapCache().getAllNodes();
+            for (net.corda.core.node.NodeInfo party : parties) {
+                Party p = party.getLegalIdentities().stream().findFirst().get();
+
+                if (p.getOwningKey() == issuer.getOwningKey() || getServiceHub().getNetworkMapCache().isNotary(p)) {
+                    continue;
+                }
+
+                peers.add(p);
+            }
 
             for (int i = 0; i < peers.size(); i++) {
                 Party peer = peers.get(i);
