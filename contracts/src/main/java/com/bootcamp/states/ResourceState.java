@@ -14,14 +14,14 @@ import java.util.List;
 public class ResourceState implements ContractState {
 
     private final Party issuer;
-    private final Party peer1;
+    private final Party owner;
     private final int resourceId;
     private final int energyVolume;
     private final int energyPrice;
 
-    public ResourceState(Party issuer, Party peer1, int resourceId, int energyVolume, int energyPrice) {
+    public ResourceState(Party issuer, Party owner, int resourceId, int energyVolume, int energyPrice) {
         this.issuer = issuer;
-        this.peer1 = peer1;
+        this.owner = owner;
         this.resourceId = resourceId;
         this.energyVolume = energyVolume;
         this.energyPrice = energyPrice;
@@ -55,10 +55,9 @@ public class ResourceState implements ContractState {
         return output;
     }
 
-
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return Arrays.asList(issuer, peer1);
+        return Arrays.asList(issuer, owner);
     }
 }
