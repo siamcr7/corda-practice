@@ -1,31 +1,36 @@
 package com.bootcamp.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.bootcamp.contracts.TokenContract;
-import com.bootcamp.states.TokenState;
+import com.bootcamp.contracts.ResourceContract;
+import com.bootcamp.states.ResourceState;
 import net.corda.core.flows.*;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import net.corda.core.contracts.CommandData;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-public class TokenIssueFlow {
+public class ResourceIssueFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class TokenIssueFlowInitiator extends FlowLogic<SignedTransaction> {
-        private final Party owner;
-        private final int amount;
+    public static class ResourceIssueFlowInitiator extends FlowLogic<SignedTransaction> {
+        private final List<Party> peers;
+        private final int resourceId;
+        private final int energyVolume;
+        private final int energyPrice;
 
-        public TokenIssueFlowInitiator(Party owner, int amount) {
-            this.owner = owner;
-            this.amount = amount;
+        public ResourceIssueFlowInitiator(Party p1, Party p2, int rId, int ev, int ep) {
+            this.resourceId = rId;
+            this.energyVolume = ev;
+            this.energyPrice = ep;
+
+            peers = Arrays.asList(p1, p2);
         }
 
         private final ProgressTracker progressTracker = new ProgressTracker();
@@ -44,46 +49,36 @@ public class TokenIssueFlow {
             // We get a reference to our own identity.
             Party issuer = getOurIdentity();
 
-            /* ============================================================================
-             *         TODO 1 - Create our TokenState to represent on-ledger tokens!
-             * ===========================================================================*/
-            // We create our new TokenState.
-            TokenState tokenState =  new TokenState(issuer, owner, amount);
+            for (int i = 0; i < peers.size(); i++) {
+                Party peer = peers.get(i);
 
-            /* ============================================================================
-             *      TODO 3 - Build our token issuance transaction to update the ledger!
-             * ===========================================================================*/
-            // We build our transaction.
-            TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
-                    .addOutputState(tokenState)
-                    .addCommand(new TokenContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(), owner.getOwningKey()));
+                ResourceState resourceState =  new ResourceState(issuer, peer, resourceId, energyVolume, energyPrice);
 
-            /* ============================================================================
-             *          TODO 2 - Write our TokenContract to control token issuance!
-             * ===========================================================================*/
-            // We check our transaction is valid based on its contracts.
-            transactionBuilder.verify(getServiceHub());
+                TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
+                        .addOutputState(resourceState)
+                        .addCommand(new ResourceContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(), peer.getOwningKey()));
 
-            FlowSession session = initiateFlow(owner);
+                transactionBuilder.verify(getServiceHub());
 
-            // We sign the transaction with our private key, making it immutable.
-            SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
+                FlowSession session = initiateFlow(peer);
 
-            // The counterparty signs the transaction
-            SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction, singletonList(session)));
+                SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
+                SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction, singletonList(session)));
 
-            // We get the transaction notarised and recorded automatically by the platform.
-            return subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
+                subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
+            }
+
+            return null;
         }
     }
 
-    @InitiatedBy(TokenIssueFlowInitiator.class)
-    public static class TokenIssueFlowResponder extends FlowLogic<Void>{
+    @InitiatedBy(ResourceIssueFlowInitiator.class)
+    public static class ResourceIssueFlowResponder extends FlowLogic<Void> {
         //private variable
         private FlowSession counterpartySession;
 
         //Constructor
-        public TokenIssueFlowResponder(FlowSession counterpartySession) {
+        public ResourceIssueFlowResponder(FlowSession counterpartySession) {
             this.counterpartySession = counterpartySession;
         }
 
