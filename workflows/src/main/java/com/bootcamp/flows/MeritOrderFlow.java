@@ -35,8 +35,6 @@ public class MeritOrderFlow {
             // We get a reference to our own identity.
             Party issuer = getOurIdentity();
 
-//            val auctionStates = serviceHub.vaultService.queryBy(AuctionState::class.java)
-
             List<StateAndRef<ResourceState>> resourceStates = getServiceHub().getVaultService().queryBy(ResourceState.class).getStates();
 
             Map<Integer, ResourceState> map = new HashMap<Integer, ResourceState>();
@@ -56,24 +54,6 @@ public class MeritOrderFlow {
             for (ResourceState state : states) {
                 System.out.println(state);
             }
-
-//            states.sort(new ResourceMeritOrderComparator());
-
-
-
-//            for (int i = 0; i < peers.size(); i++) {
-//                Party peer = peers.get(i);
-//
-//                ResourceState resourceState =  new ResourceState(issuer, peer, resourceId, energyVolume, energyPrice);
-//                TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
-//                        .addOutputState(resourceState)
-//                        .addCommand(new ResourceContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(), peer.getOwningKey()));
-//                transactionBuilder.verify(getServiceHub());
-//                FlowSession session = initiateFlow(peer);
-//                SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
-//                SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction, singletonList(session)));
-//                subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
-//            }
 
             return null;
         }
