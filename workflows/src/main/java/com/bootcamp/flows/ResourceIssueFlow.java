@@ -52,7 +52,7 @@ public class ResourceIssueFlow {
             for (net.corda.core.node.NodeInfo party : parties) {
                 Party p = party.getLegalIdentities().stream().findFirst().get();
 
-                if (p.getOwningKey() == issuer.getOwningKey() || getServiceHub().getNetworkMapCache().isNotary(p)) {
+                if (p.getOwningKey().equals(issuer.getOwningKey()) || getServiceHub().getNetworkMapCache().isNotary(p)) {
                     continue;
                 }
 
