@@ -90,33 +90,21 @@ public class BiddingFlow {
             }
 
             Party issuer = getOurIdentity();
-            System.out.println("Current Issuer: " + issuer.getOwningKey());
-            System.out.println("Initial Issuer: " + initialBid.getIssuer().getOwningKey());
-            System.out.println("Current Issuer: " + issuer.getName());
-            System.out.println("Initial Issuer: " + initialBid.getIssuer().getName());
 
-            if (issuer.equals(initialBid.getIssuer())) {
-                System.out.println("MATCHED!!!");
-            }
-
-            if (issuer.getOwningKey() == initialBid.getIssuer().getOwningKey()) {
+            if (issuer.getOwningKey().equals(initialBid.getIssuer().getOwningKey())) {
                 System.out.println("The issuers can not bid on their own items.");
                 throw new IllegalArgumentException("The issuers can not bid on their own items.");
             }
 
-
-
             final Party notary = getServiceHub().getNetworkMapCache()
                     .getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
-
-
 
             ArrayList<Party> peers = new ArrayList<>();
             List<NodeInfo> parties = getServiceHub().getNetworkMapCache().getAllNodes();
             for (net.corda.core.node.NodeInfo party : parties) {
                 Party p = party.getLegalIdentities().stream().findFirst().get();
 
-                if (p.getOwningKey() == issuer.getOwningKey() || getServiceHub().getNetworkMapCache().isNotary(p)) {
+                if (p.getOwningKey().equals(issuer.getOwningKey()) || getServiceHub().getNetworkMapCache().isNotary(p)) {
                     continue;
                 }
 
