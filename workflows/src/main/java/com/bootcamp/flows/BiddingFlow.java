@@ -42,14 +42,74 @@ public class BiddingFlow {
         @Override
         public SignedTransaction call() throws FlowException {
 
-            // TODO:
-            // Check if it is a valid id
-            // check if it is not expired yet
+            List<net.corda.core.contracts.StateAndRef<InitialBidState>> initialBidStates =
+                    getServiceHub().getVaultService().queryBy(InitialBidState.class).getStates();
+
+            InitialBidState initialBid = null;
+            for (net.corda.core.contracts.StateAndRef<InitialBidState> state : initialBidStates) {
+                if (state.getState().getData().getBidId() == id) {
+                    initialBid = state.getState().getData();
+                    break;
+                }
+            }
+
+            if (initialBid == null) {
+                System.out.println("The Bid Id does not exist");
+                throw new IllegalArgumentException("The Bid Id does not exist");
+            }
+
+            List<net.corda.core.contracts.StateAndRef<BidState>> bidStates =
+                    getServiceHub().getVaultService().queryBy(BidState.class).getStates();
+
+            BidState latestBid = null;
+            for (net.corda.core.contracts.StateAndRef<BidState> state : bidStates) {
+                if (latestBid == null) {
+                    latestBid = state.getState().getData();
+                }
+
+                if (state.getState().getData().getPrice() > latestBid.getPrice()) {
+                    latestBid = state.getState().getData();
+                }
+            }
+
+            LocalDateTime lastBidTimeDeadLine = initialBid.getLastBidTime().plusMinutes(initialBid.getWaitTimeInMinutes());
+            int lastPrice = initialBid.getPrice();
+            if (latestBid != null) {
+                lastBidTimeDeadLine = latestBid.getLastBidTime().plusMinutes(initialBid.getWaitTimeInMinutes());
+                lastPrice = latestBid.getPrice();
+            }
+
+            if (LocalDateTime.now().isAfter(lastBidTimeDeadLine)) {
+                System.out.println("The Bidding has already ended!");
+                throw new IllegalArgumentException("The Bidding has already ended!");
+            }
+
+            if (lastPrice >= price) {
+                System.out.println("Current bidding must be more than the last bid");
+                throw new IllegalArgumentException("Current bidding must be more than the last bid");
+            }
+
+            Party issuer = getOurIdentity();
+            System.out.println("Current Issuer: " + issuer.getOwningKey());
+            System.out.println("Initial Issuer: " + initialBid.getIssuer().getOwningKey());
+            System.out.println("Current Issuer: " + issuer.getName());
+            System.out.println("Initial Issuer: " + initialBid.getIssuer().getName());
+
+            if (issuer.equals(initialBid.getIssuer())) {
+                System.out.println("MATCHED!!!");
+            }
+
+            if (issuer.getOwningKey() == initialBid.getIssuer().getOwningKey()) {
+                System.out.println("The issuers can not bid on their own items.");
+                throw new IllegalArgumentException("The issuers can not bid on their own items.");
+            }
+
+
 
             final Party notary = getServiceHub().getNetworkMapCache()
                     .getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
 
-            Party issuer = getOurIdentity();
+
 
             ArrayList<Party> peers = new ArrayList<>();
             List<NodeInfo> parties = getServiceHub().getNetworkMapCache().getAllNodes();

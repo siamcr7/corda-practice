@@ -1,5 +1,6 @@
 package com.bootcamp.contracts;
 
+import com.bootcamp.states.BidState;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;

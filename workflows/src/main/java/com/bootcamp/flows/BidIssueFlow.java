@@ -45,6 +45,24 @@ public class BidIssueFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
+
+            List<net.corda.core.contracts.StateAndRef<InitialBidState>> initialBidStates =
+                    getServiceHub().getVaultService().queryBy(InitialBidState.class).getStates();
+
+            boolean idExists = false;
+            for (net.corda.core.contracts.StateAndRef<InitialBidState> state : initialBidStates) {
+                if (state.getState().getData().getBidId() == id) {
+                    idExists = true;
+                    break;
+                }
+            }
+
+            if (idExists) {
+                System.out.println("Can not use the same id to start another bid");
+                throw new IllegalArgumentException("Can not use the same id to start another bid");
+            }
+
+
             final Party notary = getServiceHub().getNetworkMapCache()
                     .getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
 

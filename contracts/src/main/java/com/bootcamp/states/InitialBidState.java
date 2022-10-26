@@ -43,18 +43,29 @@ public class InitialBidState implements ContractState {
         return bidId;
     }
 
+    public int getWaitTimeInMinutes() { return waitTimeInMinutes; }
+
+    public Party getIssuer() { return issuer; }
+
     public void showInConsole(Party lastBidder, int currentPrice,
                                      LocalDateTime lastBidTimeByBidder) {
         String output = "";
 
         output += ("Issuer: " + this.issuer.getName() + "\n");
         output += ("Bid Id: " + this.bidId + "\n");
-        output += ("Current Bid: " + currentPrice + "\n");
+        output += ("Last Bid: " + currentPrice + "\n");
 
         if (lastBidder != null) {
-            output += ("Last Bidder: " + lastBidder.getName() + "\n");
+
+            if (lastBidTimeByBidder.plusMinutes(waitTimeInMinutes).isAfter(LocalDateTime.now())) {
+                output += ("Last Bidder (THE WINNER): " + lastBidder.getName() + "\n");
+            } else {
+                output += ("Last Bidder: " + lastBidder.getName() + "\n");
+            }
             output += ("Last Bid Time: " + lastBidTimeByBidder.toString() + "\n");
             output += ("Next Bid Deadline: " + lastBidTimeByBidder.plusMinutes(waitTimeInMinutes).toString() + "\n");
+
+
         } else {
             output += ("Last Bidder: NONE" + "\n");
             output += ("Last Bid Time: NONE" + "\n");
