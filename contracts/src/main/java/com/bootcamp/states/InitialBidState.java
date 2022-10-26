@@ -83,7 +83,7 @@ public class InitialBidState implements ContractState {
         }
 
         output += ("Wait Time between bids (in minutes): " + waitTimeInMinutes + "\n");
-        
+
         if (foundWinner) {
             output += ("Bidding has ended. The Winner is last bidder: " + lastBidder.getName() + "\n");
         }
