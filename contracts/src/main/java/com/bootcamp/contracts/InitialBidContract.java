@@ -8,7 +8,9 @@ public class InitialBidContract implements Contract {
     public static String ID = "com.bootcamp.contracts.InitialBidContract";
 
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
-
+        /*
+        Verifications are done at the beginning of the flow
+         */
     }
 
     public interface Commands extends CommandData {
