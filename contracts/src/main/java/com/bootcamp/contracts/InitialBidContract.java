@@ -4,9 +4,8 @@ import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
 
-public class ResourceContract implements Contract {
-
-    public static String ID = "com.bootcamp.contracts.ResourceContract";
+public class InitialBidContract implements Contract {
+    public static String ID = "com.bootcamp.contracts.InitialBidContract";
 
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
 

@@ -1,6 +1,8 @@
 package com.bootcamp.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
+import com.bootcamp.states.BidState;
+import com.bootcamp.states.InitialBidState;
 import com.bootcamp.states.ResourceState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
@@ -9,15 +11,17 @@ import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.utilities.ProgressTracker;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class MeritOrderFlow {
-
+public class BidStatusFlow {
     @InitiatingFlow
     @StartableByRPC
-    public static class MeritOrderIssueFlowInitiator extends FlowLogic<SignedTransaction> {
-
-        public MeritOrderIssueFlowInitiator() {
+    public static class CheckStatus extends FlowLogic<SignedTransaction> {
+        public CheckStatus() {
 
         }
 
@@ -31,41 +35,57 @@ public class MeritOrderFlow {
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
-
-            // We get a reference to our own identity.
 //            Party issuer = getOurIdentity();
 
-            List<StateAndRef<ResourceState>> resourceStates = getServiceHub().getVaultService().queryBy(ResourceState.class).getStates();
+            List<StateAndRef<InitialBidState>> initialBidStates =
+                    getServiceHub().getVaultService().queryBy(InitialBidState.class).getStates();
 
-            Map<Integer, ResourceState> map = new HashMap<Integer, ResourceState>();
-            for (int i = 0; i < resourceStates.size(); i++) {
-                ResourceState state = resourceStates.get(i).getState().getData();
-                map.put(state.getResourceId(), state);
+            Map<Integer, InitialBidState> initialBidStateMappedToId = new HashMap<Integer, InitialBidState>();
+            for (int i = 0; i < initialBidStates.size(); i++) {
+                InitialBidState state = initialBidStates.get(i).getState().getData();
+                initialBidStateMappedToId.put(state.getBidId(), state);
             }
 
-            ArrayList<ResourceState> states = new ArrayList<ResourceState>();
-            for (int id : map.keySet()) {
-                states.add(map.get(id));
+            List<StateAndRef<BidState>> bidStates =
+                    getServiceHub().getVaultService().queryBy(BidState.class).getStates();
+
+            Map<Integer, BidState> bidStateMappedToId = new HashMap<Integer, BidState>();
+            for (int i = 0; i < bidStates.size(); i++) {
+                BidState state = bidStates.get(i).getState().getData();
+
+                if (!bidStateMappedToId.containsKey(state.getBidId())) {
+                    bidStateMappedToId.put(state.getBidId(), state);
+                } else {
+                    BidState prevState = bidStateMappedToId.get(state.getBidId());
+                    if (state.getPrice() > prevState.getPrice()) {
+                        bidStateMappedToId.put(state.getBidId(), state);
+                    }
+                }
             }
 
-            states.sort(Comparator.comparingInt(ResourceState::getEnergyPrice));
+            System.out.println("Current Bidding Status: ");
+            for (int id : initialBidStateMappedToId.keySet()) {
+                InitialBidState initialBidState = initialBidStateMappedToId.get(id);
+                BidState bidState = bidStateMappedToId.get(id);
 
-            System.out.println("Merit Order: ");
-            for (ResourceState state : states) {
-                System.out.println(state);
+                if (bidState == null) {
+                    initialBidState.showInConsole( null, initialBidState.getPrice(), null);
+                } else {
+                    initialBidState.showInConsole(bidState.getBidder(), bidState.getPrice(), bidState.getLastBidTime());
+                }
             }
 
             return null;
         }
     }
 
-    @InitiatedBy(MeritOrderIssueFlowInitiator.class)
-    public static class MeritOrderIssueFlowResponder extends FlowLogic<Void>{
+    @InitiatedBy(CheckStatus.class)
+    public static class CheckStatusFlowResponder extends FlowLogic<Void> {
         //private variable
         private FlowSession counterpartySession;
 
         //Constructor
-        public MeritOrderIssueFlowResponder(FlowSession counterpartySession) {
+        public CheckStatusFlowResponder(FlowSession counterpartySession) {
             this.counterpartySession = counterpartySession;
         }
 
