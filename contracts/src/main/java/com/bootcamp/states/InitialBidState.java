@@ -59,10 +59,11 @@ public class InitialBidState implements ContractState {
         output += ("Bid Id: " + this.bidId + "\n");
         output += ("Last Bid: " + currentPrice + "\n");
 
+        boolean foundWinner = false;
         if (lastBidder != null) {
-
             if (LocalDateTime.now().isAfter(lastBidTimeByBidder.plusMinutes(waitTimeInMinutes))) {
-                output += ("Last Bidder (THE WINNER): " + lastBidder.getName() + "\n");
+                output += ("Last Bidder: " + lastBidder.getName() + "\n");
+                foundWinner = true;
             } else {
                 output += ("Last Bidder: " + lastBidder.getName() + "\n");
             }
@@ -71,8 +72,8 @@ public class InitialBidState implements ContractState {
 
 
         } else {
-            output += ("Last Bidder: NONE" + "\n");
-            output += ("Last Bid Time: NONE" + "\n");
+            output += ("Last Bidder: N/A" + "\n");
+            output += ("Initial Bid Start Time: " + this.lastBidTime.format(formatter) + "\n");
 
             if (LocalDateTime.now().isAfter(this.lastBidTime.plusMinutes(waitTimeInMinutes))) {
                 output += "This Bidding is cancelled! \n";
@@ -82,6 +83,10 @@ public class InitialBidState implements ContractState {
         }
 
         output += ("Wait Time between bids (in minutes): " + waitTimeInMinutes + "\n");
+        
+        if (foundWinner) {
+            output += ("Bidding has ended. The Winner is last bidder: " + lastBidder.getName() + "\n");
+        }
 
         output += "-------------------\n";
         output += ("\n");
