@@ -8,6 +8,7 @@ import net.corda.core.identity.Party;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,6 +50,9 @@ public class InitialBidState implements ContractState {
 
     public void showInConsole(Party lastBidder, int currentPrice,
                                      LocalDateTime lastBidTimeByBidder) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
         String output = "";
 
         output += ("Issuer: " + this.issuer.getName() + "\n");
@@ -57,23 +61,27 @@ public class InitialBidState implements ContractState {
 
         if (lastBidder != null) {
 
-            if (lastBidTimeByBidder.plusMinutes(waitTimeInMinutes).isAfter(LocalDateTime.now())) {
+            if (LocalDateTime.now().isAfter(lastBidTimeByBidder.plusMinutes(waitTimeInMinutes))) {
                 output += ("Last Bidder (THE WINNER): " + lastBidder.getName() + "\n");
             } else {
                 output += ("Last Bidder: " + lastBidder.getName() + "\n");
             }
-            output += ("Last Bid Time: " + lastBidTimeByBidder.toString() + "\n");
-            output += ("Next Bid Deadline: " + lastBidTimeByBidder.plusMinutes(waitTimeInMinutes).toString() + "\n");
+            output += ("Last Bid Time: " + lastBidTimeByBidder.format(formatter) + "\n");
+            output += ("Next Bid Deadline: " + lastBidTimeByBidder.plusMinutes(waitTimeInMinutes).format(formatter) + "\n");
 
 
         } else {
             output += ("Last Bidder: NONE" + "\n");
             output += ("Last Bid Time: NONE" + "\n");
-            output += ("Next Bid Deadline: " + this.lastBidTime.plusMinutes(waitTimeInMinutes).toString() + "\n");
+
+            if (LocalDateTime.now().isAfter(this.lastBidTime.plusMinutes(waitTimeInMinutes))) {
+                output += "This Bidding is cancelled! \n";
+            } else {
+                output += ("Next Bid Deadline: " + this.lastBidTime.plusMinutes(waitTimeInMinutes).format(formatter) + "\n");
+            }
         }
 
         output += ("Wait Time between bids (in minutes): " + waitTimeInMinutes + "\n");
-
 
         output += "-------------------\n";
         output += ("\n");
