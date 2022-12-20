@@ -49,6 +49,22 @@ public class OnChainFlow {
         @Override
         public SignedTransaction call() throws FlowException {
 
+//            try {
+//                Configuration configuration = new Configuration();
+//                configuration.set("fs.defaultFS", "hdfs://localhost:9000");
+//                FileSystem fileSystem = null;
+//                fileSystem = FileSystem.get(configuration);
+//                String directoryName = "javadeveloperzone/javareadwriteexample";
+//                Path path = new Path(directoryName);
+//                fileSystem.mkdirs(path);
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//            System.out.println("Dir Created in HDFS = ");
+
+            long startTime = System.nanoTime();
+
             /** Explicit selection of notary by CordaX500Name - argument can by coded in flows or parsed from config (Preferred)*/
             final Party notary = getServiceHub().getNetworkMapCache().getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
             // We get a reference to our own identity.
@@ -108,6 +124,10 @@ public class OnChainFlow {
 
                 subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
             }
+
+            long endTime   = System.nanoTime();
+            long totalTime = endTime - startTime;
+            System.out.println(totalTime);
 
             return null;
         }
