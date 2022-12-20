@@ -56,6 +56,9 @@ dependencies {
 
     // CorDapp dependencies.
     cordapp project(":contracts")
+
+//    implementation "org.apache.hadoop:hadoop-common:3.1.1"
+    implementation "com.squareup.okhttp3:okhttp:4.10.0"
 }
 
 task integrationTest(type: Test, dependsOn: []) {
