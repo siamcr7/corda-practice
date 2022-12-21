@@ -10,16 +10,8 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
-import co.paralleluniverse.fibers.Suspendable;
-//import com.google.common.collect.ImmutableList;
 import net.corda.core.crypto.SecureHash;
-import net.corda.core.flows.*;
-import net.corda.core.identity.CordaX500Name;
-import net.corda.core.identity.Party;
 import net.corda.core.node.ServiceHub;
-import net.corda.core.transactions.SignedTransaction;
-import net.corda.core.transactions.TransactionBuilder;
-import net.corda.core.utilities.ProgressTracker;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,20 +41,6 @@ public class OnChainFlow {
         @Override
         public SignedTransaction call() throws FlowException {
 
-//            try {
-//                Configuration configuration = new Configuration();
-//                configuration.set("fs.defaultFS", "hdfs://localhost:9000");
-//                FileSystem fileSystem = null;
-//                fileSystem = FileSystem.get(configuration);
-//                String directoryName = "javadeveloperzone/javareadwriteexample";
-//                Path path = new Path(directoryName);
-//                fileSystem.mkdirs(path);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//
-//            System.out.println("Dir Created in HDFS = ");
-
             long startTime = System.nanoTime();
 
             /** Explicit selection of notary by CordaX500Name - argument can by coded in flows or parsed from config (Preferred)*/
@@ -84,7 +62,7 @@ public class OnChainFlow {
 
             // upload attachment via private method
             String path = System.getProperty("user.dir");
-            System.out.println("Working Directory = " + path);
+//            System.out.println("Working Directory = " + path);
 
             //Change the path to "../test.zip" for passing the unit test.
             //because the unit test are in a different working directory than the running node.
