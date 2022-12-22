@@ -29,7 +29,12 @@ public class OffChainFlow {
     @StartableByRPC
     public static class OffChainUpload extends FlowLogic<SignedTransaction> {
 
-        public OffChainUpload() {
+        private final int trxNum;
+        private final int fileSzInMB;
+
+        public OffChainUpload(int sz, int trx) {
+            trxNum = trx;
+            fileSzInMB = sz;
         }
 
         private final ProgressTracker progressTracker = new ProgressTracker();
@@ -44,6 +49,7 @@ public class OffChainFlow {
         public SignedTransaction call() throws FlowException {
 
             long startTime = System.nanoTime();
+            ArrayList<Long> times = new ArrayList<>();
 
             /** Explicit selection of notary by CordaX500Name - argument can by coded in flows or parsed from config (Preferred)*/
             final Party notary = getServiceHub().getNetworkMapCache().getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
@@ -62,38 +68,60 @@ public class OffChainFlow {
                 peers.add(p);
             }
 
-            System.out.println("point1");
-            InitOffChainUpload asyncOffChainUpload = new InitOffChainUpload();
-            String attachmentHash = await(asyncOffChainUpload);
-
-            System.out.println("attachmentHash: " + attachmentHash);
+//            System.out.println("point1");
 
 
-            // Sending to all nodes
-            for (int i = 0; i < peers.size(); i++) {
-                Party peer = peers.get(i);
+//            System.out.println("attachmentHash: " + attachmentHash);
 
-                FileState fileState =  new FileState(issuer, peer, attachmentHash);
+            for (int idx = 1; idx <= trxNum; idx++) {
+                InitOffChainUpload asyncOffChainUpload = new InitOffChainUpload(idx, fileSzInMB);
+                String attachmentHash = await(asyncOffChainUpload);
 
-                TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
-                        .addOutputState(fileState)
-                        .addCommand(new FileContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(),
-                                peer.getOwningKey()));
+                // Sending to all nodes
+                for (int i = 0; i < peers.size(); i++) {
+                    Party peer = peers.get(i);
 
-                transactionBuilder.verify(getServiceHub());
+                    FileState fileState =  new FileState(issuer, peer, attachmentHash);
 
-                FlowSession session = initiateFlow(peer);
+                    TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
+                            .addOutputState(fileState)
+                            .addCommand(new FileContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(),
+                                    peer.getOwningKey()));
 
-                SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
-                SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction,
-                        singletonList(session)));
+                    transactionBuilder.verify(getServiceHub());
 
-                subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
+                    FlowSession session = initiateFlow(peer);
+
+                    SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
+                    SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction,
+                            singletonList(session)));
+
+                    subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
+                }
+
+                long endTime   = System.nanoTime();
+                long totalTime = endTime - startTime;
+//                System.out.println("time after trx: " + idx + " = " + totalTime);
+                times.add(totalTime);
             }
 
-            long endTime   = System.nanoTime();
-            long totalTime = endTime - startTime;
-            System.out.println("totalTime: " + totalTime);
+            long totalDiff = 0;
+            long count = 0;
+            for (int i = 0; i < times.size(); i++) {
+                if (i > 0) {
+                    totalDiff += (times.get(i) - times.get(i - 1));
+                    count++;
+                }
+            }
+
+            double avgTime = (double) totalDiff / (double) count;
+            double elapsedTimeInSecond = (double) avgTime / 1_000_000_000;
+            System.out.println("Time taken on avg = " + elapsedTimeInSecond);
+
+            double totalTimeTaken = (double) times.get(times.size() - 1) / 1_000_000_000;
+            System.out.println("Total time taken for " + times.size() + " trx = " + totalTimeTaken);
+
+
 
             return null;
         }
@@ -136,17 +164,25 @@ public class OffChainFlow {
 }
 
 class InitOffChainUpload implements FlowExternalOperation<String> {
+
+    private final int idx;
+    private final int sz;
+    public InitOffChainUpload(int idx, int sz) {
+        this.idx = idx;
+        this.sz = sz;
+    }
+
     @NotNull
     @Override
     public String execute(@NotNull String deduplicationId) {
-        System.out.println("point2");
+//        System.out.println("point2");
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.HOURS)
                 .writeTimeout(10, TimeUnit.HOURS)
                 .readTimeout(30, TimeUnit.HOURS)
                 .build();
-        System.out.println("point3");
-        String url = "http://localhost:8080";
+//        System.out.println("point3");
+        String url = "http://localhost:8080/?id=" + idx + "&sz=" + sz;
 
         try {
             return client.newCall(
@@ -159,10 +195,10 @@ class InitOffChainUpload implements FlowExternalOperation<String> {
                     .string();
 
         } catch (IOException e) {
-            System.out.println("point 3.9");
+//            System.out.println("point 3.9");
             StringWriter errors = new StringWriter();
             e.printStackTrace(new PrintWriter(errors));
-            System.out.println("point4: EEEEEE " + errors.toString());
+//            System.out.println("point4: EEEEEE " + errors.toString());
             throw new HospitalizeFlowException("External Api Called Failed", e);
         }
     }
