@@ -27,7 +27,12 @@ public class OnChainFlow {
     @StartableByRPC
     public static class OnChainUpload extends FlowLogic<SignedTransaction> {
 
-        public OnChainUpload() {
+        private final int trxNum;
+        private final int fileSzInMB;
+
+        public OnChainUpload(int sz, int trx) {
+            trxNum = trx;
+            fileSzInMB = sz;
         }
 
         private final ProgressTracker progressTracker = new ProgressTracker();
@@ -42,6 +47,7 @@ public class OnChainFlow {
         public SignedTransaction call() throws FlowException {
 
             long startTime = System.nanoTime();
+            ArrayList<Long> times = new ArrayList<>();
 
             /** Explicit selection of notary by CordaX500Name - argument can by coded in flows or parsed from config (Preferred)*/
             final Party notary = getServiceHub().getNetworkMapCache().getNotary(CordaX500Name.parse("O=Notary,L=London,C=GB"));
@@ -60,52 +66,75 @@ public class OnChainFlow {
                 peers.add(p);
             }
 
-            // upload attachment via private method
-            String path = System.getProperty("user.dir");
+            for (int idx = 1; idx <= trxNum; idx++) {
+                String path = System.getProperty("user.dir");
+
+                String fileName = fileSzInMB + "mb_" + idx;
+
+                // upload attachment via private method
+
 //            System.out.println("Working Directory = " + path);
 
-            //Change the path to "../test.zip" for passing the unit test.
-            //because the unit test are in a different working directory than the running node.
+                //Change the path to "../test.zip" for passing the unit test.
+                //because the unit test are in a different working directory than the running node.
 //            String zipPath = unitTest ? "../test.zip" : "../../../test.zip";
-            String zipPath = "../../../test.zip";
+                String zipPath = "../../../../" + fileName + ".zip";
 
-            SecureHash attachmentHash = null;
-            try {
-                attachmentHash = SecureHash.parse(uploadAttachment(
-                        zipPath,
-                        getServiceHub(),
-                        getOurIdentity(),
-                        "testzip")
-                );
-            } catch (IOException e) {
-                e.printStackTrace();
+                SecureHash attachmentHash = null;
+                try {
+                    attachmentHash = SecureHash.parse(uploadAttachment(
+                            zipPath,
+                            getServiceHub(),
+                            getOurIdentity(),
+                            fileName + "zip")
+                    );
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                // Sending to all nodes
+                for (int i = 0; i < peers.size(); i++) {
+                    Party peer = peers.get(i);
+
+                    FileState fileState =  new FileState(issuer, peer, attachmentHash.toString());
+
+                    TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
+                            .addOutputState(fileState)
+                            .addCommand(new FileContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(),
+                                    peer.getOwningKey()));
+
+                    transactionBuilder.verify(getServiceHub());
+
+                    FlowSession session = initiateFlow(peer);
+
+                    SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
+                    SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction,
+                            singletonList(session)));
+
+                    subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
+                }
+
+                long endTime   = System.nanoTime();
+                long totalTime = endTime - startTime;
+//                System.out.println("time after trx: " + idx + " = " + totalTime);
+                times.add(totalTime);
             }
 
-            // Sending to all nodes
-            for (int i = 0; i < peers.size(); i++) {
-                Party peer = peers.get(i);
-
-                FileState fileState =  new FileState(issuer, peer, attachmentHash.toString());
-
-                TransactionBuilder transactionBuilder = new TransactionBuilder(notary)
-                        .addOutputState(fileState)
-                        .addCommand(new FileContract.Commands.Issue(), Arrays.asList(issuer.getOwningKey(),
-                                peer.getOwningKey()));
-
-                transactionBuilder.verify(getServiceHub());
-
-                FlowSession session = initiateFlow(peer);
-
-                SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
-                SignedTransaction fullySignedTransaction = subFlow(new CollectSignaturesFlow(signedTransaction,
-                        singletonList(session)));
-
-                subFlow(new FinalityFlow(fullySignedTransaction, singletonList(session)));
+            long totalDiff = 0;
+            long count = 0;
+            for (int i = 0; i < times.size(); i++) {
+                if (i > 0) {
+                    totalDiff += (times.get(i) - times.get(i - 1));
+                    count++;
+                }
             }
 
-            long endTime   = System.nanoTime();
-            long totalTime = endTime - startTime;
-            System.out.println(totalTime);
+            double avgTime = (double) totalDiff / (double) count;
+            double elapsedTimeInSecond = (double) avgTime / 1_000_000_000;
+            System.out.println("Time taken on avg = " + elapsedTimeInSecond);
+
+            double totalTimeTaken = (double) times.get(times.size() - 1) / 1_000_000_000;
+            System.out.println("Total time taken for " + times.size() + " trx = " + totalTimeTaken);
 
             return null;
         }
