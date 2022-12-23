@@ -68,11 +68,6 @@ public class OffChainFlow {
                 peers.add(p);
             }
 
-//            System.out.println("point1");
-
-
-//            System.out.println("attachmentHash: " + attachmentHash);
-
             for (int idx = 1; idx <= trxNum; idx++) {
                 InitOffChainUpload asyncOffChainUpload = new InitOffChainUpload(idx, fileSzInMB);
                 String attachmentHash = await(asyncOffChainUpload);
@@ -101,7 +96,6 @@ public class OffChainFlow {
 
                 long endTime   = System.nanoTime();
                 long totalTime = endTime - startTime;
-//                System.out.println("time after trx: " + idx + " = " + totalTime);
                 times.add(totalTime);
             }
 
@@ -120,8 +114,6 @@ public class OffChainFlow {
 
             double totalTimeTaken = (double) times.get(times.size() - 1) / 1_000_000_000;
             System.out.println("Total time taken for " + times.size() + " trx = " + totalTimeTaken);
-
-
 
             return null;
         }
@@ -175,13 +167,12 @@ class InitOffChainUpload implements FlowExternalOperation<String> {
     @NotNull
     @Override
     public String execute(@NotNull String deduplicationId) {
-//        System.out.println("point2");
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.HOURS)
                 .writeTimeout(10, TimeUnit.HOURS)
                 .readTimeout(30, TimeUnit.HOURS)
                 .build();
-//        System.out.println("point3");
+
         String url = "http://localhost:8080/?id=" + idx + "&sz=" + sz;
 
         try {
@@ -195,10 +186,8 @@ class InitOffChainUpload implements FlowExternalOperation<String> {
                     .string();
 
         } catch (IOException e) {
-//            System.out.println("point 3.9");
             StringWriter errors = new StringWriter();
             e.printStackTrace(new PrintWriter(errors));
-//            System.out.println("point4: EEEEEE " + errors.toString());
             throw new HospitalizeFlowException("External Api Called Failed", e);
         }
     }

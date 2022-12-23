@@ -10,11 +10,7 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
-import net.corda.core.crypto.SecureHash;
-import net.corda.core.node.ServiceHub;
-
 import java.io.FileNotFoundException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,30 +65,11 @@ public class FullyOnChainFlow {
             }
 
             for (int idx = 1; idx <= trxNum; idx++) {
-                String path = System.getProperty("user.dir");
 
                 String fileName = fileSzInMB + "mb_" + idx;
 
-                // upload attachment via private method
-
-//            System.out.println("Working Directory = " + path);
-
-                //Change the path to "../test.zip" for passing the unit test.
-                //because the unit test are in a different working directory than the running node.
-//            String zipPath = unitTest ? "../test.zip" : "../../../test.zip";
                 String zipPath = "../../../../" + fileName + ".zip";
 
-//                SecureHash attachmentHash = null;
-//                try {
-//                    attachmentHash = SecureHash.parse(uploadAttachment(
-//                            zipPath,
-//                            getServiceHub(),
-//                            getOurIdentity(),
-//                            fileName + "zip")
-//                    );
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
                 File file = new File(zipPath);
                 byte[] bytes = new byte[(int) file.length()];
 
@@ -128,7 +105,6 @@ public class FullyOnChainFlow {
 
                 long endTime   = System.nanoTime();
                 long totalTime = endTime - startTime;
-//                System.out.println("time after trx: " + idx + " = " + totalTime);
                 times.add(totalTime);
             }
 

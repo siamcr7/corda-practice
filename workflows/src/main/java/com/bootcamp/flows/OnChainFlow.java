@@ -67,17 +67,7 @@ public class OnChainFlow {
             }
 
             for (int idx = 1; idx <= trxNum; idx++) {
-                String path = System.getProperty("user.dir");
-
                 String fileName = fileSzInMB + "mb_" + idx;
-
-                // upload attachment via private method
-
-//            System.out.println("Working Directory = " + path);
-
-                //Change the path to "../test.zip" for passing the unit test.
-                //because the unit test are in a different working directory than the running node.
-//            String zipPath = unitTest ? "../test.zip" : "../../../test.zip";
                 String zipPath = "../../../../" + fileName + ".zip";
 
                 SecureHash attachmentHash = null;
@@ -116,7 +106,6 @@ public class OnChainFlow {
 
                 long endTime   = System.nanoTime();
                 long totalTime = endTime - startTime;
-//                System.out.println("time after trx: " + idx + " = " + totalTime);
                 times.add(totalTime);
             }
 
