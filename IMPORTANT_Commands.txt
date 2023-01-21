@@ -1,0 +1,28 @@
+Corda:
+From Gradle:
+gradle build
+gradle deployNodes
+
+Open CMD in project root. Run ".\build\nodes\runnodes"
+flow start FullyOnChainUpload trx: 5, sz: 5
+flow start OnChainUpload trx: 5, sz: 10
+flow start OffChainUpload trx: 5, sz: 50
+run vaultQuery contractStateType: com.bootcamp.states.FileState
+
+
+HADOOP:
+run admin CMD
+hdfs namenode –format
+hdfs datanode –format
+Go to sbin. Run "start-all.cmd" in cmd
+
+Details are in:
+http://localhost:8088 (useless)
+http://localhost:9870
+
+
+
+HDFS API:
+Start in VS Code. Press F5
+http://localhost:8080
+http://localhost:8080?id=1
